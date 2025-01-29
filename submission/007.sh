@@ -11,7 +11,7 @@ echo "$BDATA" | jq -r '.tx[].txid' | while read -r TX; do
       OUT_ADDRESS=$(echo "$TXOUTN" | jq -r '.scriptPubKey.addresses[0]')
       OUT_STATUS=$(bitcoin-cli gettxout "$OUT_ADDRESS" 1)
 
-      if [ -n "$OUT_STATUS" ]; then
+      if [ -n "$OUT_ADDRESS" ]; then
         echo "$OUT_ADDRESS"
       fi
     done
