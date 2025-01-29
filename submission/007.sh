@@ -12,7 +12,7 @@ for TX in $(echo "$BDATA" | jq -r '.tx[].txid'); do
     OUT_STATUS=$(bitcoin-cli gettxout $TX $OUT_INDEX)
 
     if [ -n "$OUT_STATUS" ] then
-            echo "$OUT_ADDRESS"
-        fi
-    done
+      echo "$OUT_ADDRESS"
+    fi
+  done
 done
