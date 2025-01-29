@@ -5,12 +5,13 @@ BDATA="$(bitcoin-cli -rpcconnect=84.247.182.145:8332 -rpcuser=user_259 -rpcpassw
 for TX in $(echo "$BDATA" | jq -r '.tx[].txid'); do
   TX_OUTS=$(bitcoin-cli getrawtransaction "$TX" true | jq -c '.vout[]')
 
-  for TXOUTN in $TX_OUTS; do
-    OUT_INDEX= $(echo "$TXOUTN" | jq -r '.n')
-    OUT_ADDRESS= $(echo "$TXOUTN" | jq -r '.scriptPubKey.addresses[0]')
-    OUT_STATUS= $(bitcoin-cli gettxout $TX $OUT_INDEX)
+  for TXOUTN in $(echo "$TX_OUTS" | jq -c '.vout[] | @base64'); do
+    TXOUTN=$(echo "$TXOUTN" | base64 --decode)
+    OUT_INDEX=$(echo "$TXOUTN" | jq -r '.n')
+    OUT_ADDRESS=$(echo "$TXOUTN" | jq -r '.scriptPubKey.addresses[0]')
+    OUT_STATUS=$(bitcoin-cli gettxout $TX $OUT_INDEX)
 
-    if [ -n "$OUT_STATUS" ]; then
+    if [ -n "$OUT_STATUS" ] && [ "$OUT_STATUS" != "null" ]; then
             echo "$OUT_ADDRESS"
         fi
     done
