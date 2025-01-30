@@ -7,7 +7,7 @@ BDATA="$(bitcoin-cli getblock "$BHASH" 2)"
 echo "$BDATA" | jq -c '.tx[] | {txid: .txid, vout: .vout[]}' | while read -r TX_OUT; do
   TXID=$(echo "$TX_OUT" | jq -r '.txid')
   VOUT_INDEX=$(echo "$TX_OUT" | jq -r '.vout.n')
-  ADDRESS=$(echo "$TX_OUT" | jq -r '.vout.scriptPubKey.addresses[0]')
+  ADDRESS=$(echo "$TX_OUT" | jq -r '.vout.scriptPubKey.address[0]')
 
   # Verifica se o output ainda está não gasto (unspent)
   OUT_STATUS=$(bitcoin-cli gettxout "$TXID" "$VOUT_INDEX")
