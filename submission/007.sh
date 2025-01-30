@@ -1,30 +1,18 @@
 # Only one single output remains unspent from block 123,321. What address was it sent to?
-BHASH="$(bitcoin-cli -rpcconnect=84.247.182.145:8332 -rpcuser=user_259 -rpcpassword=CsaSE6fmbyP0 getblockhash 123321)"
-BDATA="$(bitcoin-cli -rpcconnect=84.247.182.145:8332 -rpcuser=user_259 -rpcpassword=CsaSE6fmbyP0 getblock "$BHASH" 2)"
+#!/bin/bash
 
-if [ -z "$BDATA" ]; then
-  exit 1
-fi
+BHASH="$(bitcoin-cli getblockhash 123321)"
+BDATA="$(bitcoin-cli getblock "$BHASH" 2)"
 
-echo "$BDATA" | jq -r '.tx[].txid' | while read -r TX; do
-  TX_OUTS=$(bitcoin-cli getrawtransaction "$TX" true)
+echo "$BDATA" | jq -c '.tx[] | {txid: .txid, vout: .vout[]}' | while read -r TX_OUT; do
+  TXID=$(echo "$TX_OUT" | jq -r '.txid')
+  VOUT_INDEX=$(echo "$TX_OUT" | jq -r '.vout.n')
+  ADDRESS=$(echo "$TX_OUT" | jq -r '.vout.scriptPubKey.addresses[0]')
 
-  if [ -z "$TX_OUTS" ] || [ "$TX_OUTS" == "null" ]; then
-    continue
+  # Verifica se o output ainda está não gasto (unspent)
+  OUT_STATUS=$(bitcoin-cli gettxout "$TXID" "$VOUT_INDEX")
+
+  if [ -n "$OUT_STATUS" ]; then
+    echo "$ADDRESS"
   fi
-
-  echo "$TX_OUTS" | jq -c '.vout[] | select(.scriptPubKey.addresses != null)' | while read -r TXOUTN; do
-    OUT_INDEX=$(echo "$TXOUTN" | jq -r '.n')
-    OUT_ADDRESS=$(echo "$TXOUTN" | jq -r '.scriptPubKey.addresses[0]')
-    
-    if [ -z "$OUT_ADDRESS" ] || [ "$OUT_ADDRESS" == "null" ]; then
-      continue
-    fi
-
-    OUT_STATUS=$(bitcoin-cli gettxout "$TX" "$OUT_INDEX")
-
-    if [ -n "$OUT_STATUS" ]; then
-      echo "$OUT_ADDRESS"
-    fi
-  done
 done
